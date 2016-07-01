@@ -10,7 +10,7 @@ public class AudioSampler {
     private TargetDataLine targetDataLine;
     private AudioFormat audioFormat;
 
-    private float defaultSampleRate = 22050;
+    private float defaultSampleRate = 44100;
     private int defaultSampleSizeInBits = 8;
     private int defaultChannels = 1;
     private boolean defaultSigned = true;

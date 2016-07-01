@@ -8,6 +8,10 @@ public class Grapher extends JFrame {
 
     Graph timeGraph, freqGraph;
 
+    //Edit these values for your data line so that graphs are a good size. (smaller values makes graphs bigger)
+    double timeMaxValue = 80;
+    double freqMaxValue = 3;
+
     public Grapher(){
         //set default setting for the JFrame
         this.setSize(600,400);
@@ -19,9 +23,11 @@ public class Grapher extends JFrame {
         this.setTitle("JanhoSignalAnalyzer");
 
 
-        timeGraph = new Graph(Graph.DRAW_ORGIN.MIDDLE);
-        timeGraph.setMaxValue(300);
-        freqGraph = new Graph(Graph.DRAW_ORGIN.BOTTOM);
+        timeGraph = new Graph(Graph.DRAW_ORGIN.MIDDLE, Graph.STYLE.LINE);
+        freqGraph = new Graph(Graph.DRAW_ORGIN.BOTTOM, Graph.STYLE.BAR);
+        timeGraph.setMaxValue(timeMaxValue);
+        freqGraph.setMaxValue(freqMaxValue);
+        freqGraph.setShiftY(-1);
         this.add(timeGraph);
         this.add(freqGraph);
     }
