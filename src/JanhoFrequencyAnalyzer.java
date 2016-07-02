@@ -10,9 +10,11 @@ public class JanhoFrequencyAnalyzer {
     private AudioSampler audioSampler;
     Grapher grapher;
 
+    int samplesPerUpdate = 512;
     int bufferSize = 16384;
     int samplesForFft = 8192; //must be 2^n
     int samplesCutAfterFft = 3072;
+    int samplesToDrawTime = 2024; //must be bufferSize / n;
     int samplesToDrawFft = 128; //must fulfill: samplesToDrawFft * n = samplesForFft / 2, n = {1, 2, 3 ...}
     double[] buffer = new double[bufferSize];
 
@@ -43,12 +45,20 @@ public class JanhoFrequencyAnalyzer {
 
         while(true) {
             try {
-                saveSamplesToBuffer(audioSampler.getSamplesDouble(512));
+                saveSamplesToBuffer(audioSampler.getSamplesDouble(samplesPerUpdate));
+
+                double[] timeSamplesToDraw = new double[samplesToDrawTime];
+                int sps = buffer.length / timeSamplesToDraw.length;
+                for(int i = 0; i < timeSamplesToDraw.length; i++){
+                    timeSamplesToDraw[i] = buffer[i * sps];
+                }
+
                 double[] freqSamples = new double[samplesForFft];
                 for(int i = 0; i < samplesForFft; i++){
                     freqSamples[i] = buffer[buffer.length - samplesForFft + i];
                 }
                 freqSamples = FFT.absFft(freqSamples);
+
 
                 //split in half becouse the spectrum is twofold
                 double[] freqSamplesCut = new double[freqSamples.length / 2 - samplesCutAfterFft];
@@ -57,7 +67,7 @@ public class JanhoFrequencyAnalyzer {
                 }
 
                 double[] freqSamplesToDraw = new double[samplesToDrawFft];
-                int sps = freqSamplesCut.length / samplesToDrawFft;
+                sps = freqSamplesCut.length / samplesToDrawFft;
                 for(int i = 0; i < samplesToDrawFft; i++){
                     double avg = 0;
                     for(int o = 0; o < sps; o++){
@@ -67,7 +77,7 @@ public class JanhoFrequencyAnalyzer {
                     freqSamplesToDraw[i] = avg;
                 }
 
-                grapher.getTimeGraph().setData(buffer);
+                grapher.getTimeGraph().setData(timeSamplesToDraw);
                 grapher.getFreqGraph().setData(freqSamplesToDraw);
 
             } catch (SamplerException se) {
