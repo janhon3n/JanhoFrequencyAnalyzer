@@ -15,7 +15,7 @@ public class JanhoFrequencyAnalyzer {
     int samplesForFft = 8192; //must be 2^n
     int samplesCutAfterFft = 3072;
     int samplesToDrawTime = 2024; //must be bufferSize / n;
-    int samplesToDrawFft = 128; //must fulfill: samplesToDrawFft * n = samplesForFft / 2, n = {1, 2, 3 ...}
+    int samplesToDrawFft = 256; //must fulfill: samplesToDrawFft * n = samplesForFft / 2, n = {1, 2, 3 ...}
     double[] buffer = new double[bufferSize];
 
 

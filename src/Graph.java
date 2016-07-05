@@ -18,7 +18,7 @@ public class Graph extends JComponent {
         BOTTOM, MIDDLE, TOP
     }
     public enum STYLE {
-        LINE, BAR
+        LINE, BAR, BARTOP
     }
 
     public Graph(){
@@ -71,6 +71,7 @@ public class Graph extends JComponent {
                     y2 = (int) (data[i + 1] / maxValue * height);
                     break;
                 case BAR:
+                case BARTOP:
                 default:
                     y1 = (int) (data[i] / maxValue * height);
                     y2 = (int) (data[i] / maxValue * height);
@@ -92,7 +93,16 @@ public class Graph extends JComponent {
 
             y1 += shiftY;
             y2 += shiftY;
-            g.drawLine(x1, y1, x2, y2);
+            switch(style) {
+                case BAR:
+                    g.fillRect(x1, y1, x2-x1 - 1, this.getHeight() - y1);
+                    break;
+                case LINE:
+                case BARTOP:
+                default:
+                    g.drawLine(x1, y1, x2, y2);
+                    break;
+            }
         }
     }
 

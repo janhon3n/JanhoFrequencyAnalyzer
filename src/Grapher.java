@@ -9,8 +9,8 @@ public class Grapher extends JFrame {
     Graph timeGraph, freqGraph;
 
     //Edit these values for your data line so that graphs are a good size. (smaller values makes graphs bigger)
-    double timeMaxValue = 80;
-    double freqMaxValue = 3;
+    double timeMaxValue = 256;
+    double freqMaxValue = 5;
 
     public Grapher(){
         //set default setting for the JFrame
