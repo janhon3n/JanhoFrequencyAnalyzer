@@ -1,4 +1,7 @@
+import org.sintef.jarduino.DigitalPin;
+import org.sintef.jarduino.DigitalState;
 import org.sintef.jarduino.JArduino;
+import org.sintef.jarduino.PinMode;
 
 import javax.sound.sampled.LineUnavailableException;
 import java.util.Scanner;
@@ -15,11 +18,15 @@ public class JanhoFrequencyAnalyzer extends JArduino {
 
     int samplesPerUpdate = 512;
     int bufferSize = 16384;
-    int samplesForFft = 8192; //must be 2^n
-    int samplesCutAfterFft = 3072;
+    int samplesForFft = 4096; //must be 2^n
+    int samplesCutAfterFft = 0;
     int samplesToDrawTime = 2024; //must be bufferSize / n;
     int samplesToDrawFft = 256; //must fulfill: samplesToDrawFft * n = samplesForFft / 2, n = {1, 2, 3 ...}
     double[] buffer = new double[bufferSize];
+
+    DigitalPin ledPin = DigitalPin.PIN_5;
+    int ledControlFromWhatFreqsamplesToDrawValue = 3;
+    double ledBaseTreshold = 5000;
 
 
     public JanhoFrequencyAnalyzer(String port) {
@@ -52,6 +59,7 @@ public class JanhoFrequencyAnalyzer extends JArduino {
 
     @Override
     protected void setup() {
+        this.pinMode(ledPin, PinMode.OUTPUT);
         Scanner scanner = new Scanner(System.in);
 
         grapher = new Grapher();
@@ -82,12 +90,12 @@ public class JanhoFrequencyAnalyzer extends JArduino {
 
             double[] timeSamplesToDraw = new double[samplesToDrawTime];
             int sps = buffer.length / timeSamplesToDraw.length;
-            for(int i = 0; i < timeSamplesToDraw.length; i++){
+            for (int i = 0; i < timeSamplesToDraw.length; i++) {
                 timeSamplesToDraw[i] = buffer[i * sps];
             }
 
             double[] freqSamples = new double[samplesForFft];
-            for(int i = 0; i < samplesForFft; i++){
+            for (int i = 0; i < samplesForFft; i++) {
                 freqSamples[i] = buffer[buffer.length - samplesForFft + i];
             }
             freqSamples = FFT.absFft(freqSamples);
@@ -95,19 +103,26 @@ public class JanhoFrequencyAnalyzer extends JArduino {
 
             //split in half becouse the spectrum is twofold
             double[] freqSamplesCut = new double[freqSamples.length / 2 - samplesCutAfterFft];
-            for(int i = 0; i < freqSamplesCut.length; i++){
+            for (int i = 0; i < freqSamplesCut.length; i++) {
                 freqSamplesCut[i] = freqSamples[i];
             }
 
             double[] freqSamplesToDraw = new double[samplesToDrawFft];
             sps = freqSamplesCut.length / samplesToDrawFft;
-            for(int i = 0; i < samplesToDrawFft; i++){
+            for (int i = 0; i < samplesToDrawFft; i++) {
                 double avg = 0;
-                for(int o = 0; o < sps; o++){
-                    avg += freqSamplesCut[(i*sps)+o];
+                for (int o = 0; o < sps; o++) {
+                    avg += freqSamplesCut[(i * sps) + o];
                 }
                 avg = avg / sps;
                 freqSamplesToDraw[i] = avg;
+            }
+
+            System.out.println(freqSamplesToDraw[ledControlFromWhatFreqsamplesToDrawValue]);
+            if (freqSamplesToDraw[ledControlFromWhatFreqsamplesToDrawValue] > ledBaseTreshold){
+                this.digitalWrite(ledPin, DigitalState.HIGH);
+            } else {
+                this.digitalWrite(ledPin, DigitalState.LOW);
             }
 
             grapher.getTimeGraph().setData(timeSamplesToDraw);
