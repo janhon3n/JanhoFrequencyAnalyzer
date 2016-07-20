@@ -1,10 +1,13 @@
+import org.sintef.jarduino.JArduino;
+
 import javax.sound.sampled.LineUnavailableException;
 import java.util.Scanner;
 
 /**
  * Created by Miquel on 20.6.2016.
  */
-public class JanhoFrequencyAnalyzer {
+
+public class JanhoFrequencyAnalyzer extends JArduino {
 
     private FFT fft;
     private AudioSampler audioSampler;
@@ -19,74 +22,11 @@ public class JanhoFrequencyAnalyzer {
     double[] buffer = new double[bufferSize];
 
 
-    public JanhoFrequencyAnalyzer() {
-        Scanner scanner = new Scanner(System.in);
-
-        grapher = new Grapher();
-        grapher.getFreqGraph().setMaxValue(samplesForFft * grapher.getFreqGraph().getMaxValue());
-
-        fft = new FFT();
-        audioSampler = new AudioSampler();
-
-        while(!audioSampler.lineChosen())
-            try {
-                audioSampler.chooseLineLUI(scanner);
-            } catch (LineUnavailableException lue){
-                lue.printStackTrace();
-            }
+    public JanhoFrequencyAnalyzer(String port) {
+        super(port);
     }
 
-    public void begin() {
-        try {
-            audioSampler.openLine();
-        } catch(LineUnavailableException lue){
-            lue.printStackTrace();
-        }
 
-        while(true) {
-            try {
-                saveSamplesToBuffer(audioSampler.getSamplesDouble(samplesPerUpdate));
-
-                double[] timeSamplesToDraw = new double[samplesToDrawTime];
-                int sps = buffer.length / timeSamplesToDraw.length;
-                for(int i = 0; i < timeSamplesToDraw.length; i++){
-                    timeSamplesToDraw[i] = buffer[i * sps];
-                }
-
-                double[] freqSamples = new double[samplesForFft];
-                for(int i = 0; i < samplesForFft; i++){
-                    freqSamples[i] = buffer[buffer.length - samplesForFft + i];
-                }
-                freqSamples = FFT.absFft(freqSamples);
-
-
-                //split in half becouse the spectrum is twofold
-                double[] freqSamplesCut = new double[freqSamples.length / 2 - samplesCutAfterFft];
-                for(int i = 0; i < freqSamplesCut.length; i++){
-                    freqSamplesCut[i] = freqSamples[i];
-                }
-
-                double[] freqSamplesToDraw = new double[samplesToDrawFft];
-                sps = freqSamplesCut.length / samplesToDrawFft;
-                for(int i = 0; i < samplesToDrawFft; i++){
-                    double avg = 0;
-                    for(int o = 0; o < sps; o++){
-                        avg += freqSamplesCut[(i*sps)+o];
-                    }
-                    avg = avg / sps;
-                    freqSamplesToDraw[i] = avg;
-                }
-
-                grapher.getTimeGraph().setData(timeSamplesToDraw);
-                grapher.getFreqGraph().setData(freqSamplesToDraw);
-
-            } catch (SamplerException se) {
-                //se.printStackTrace();
-            } catch (LineUnavailableException lue) {
-                lue.printStackTrace();
-            }
-        }
-    }
 
     public void saveSamplesToBuffer(double[] samples) {
         if (samples.length >= buffer.length) {
@@ -106,7 +46,77 @@ public class JanhoFrequencyAnalyzer {
     }
 
     public static void main(String[] args) {
-        JanhoFrequencyAnalyzer jfa = new JanhoFrequencyAnalyzer();
-        jfa.begin();
+        JanhoFrequencyAnalyzer jfa = new JanhoFrequencyAnalyzer("COM3");
+        jfa.runArduinoProcess();
+    }
+
+    @Override
+    protected void setup() {
+        Scanner scanner = new Scanner(System.in);
+
+        grapher = new Grapher();
+        grapher.getFreqGraph().setMaxValue(samplesForFft * grapher.getFreqGraph().getMaxValue());
+
+        fft = new FFT();
+        audioSampler = new AudioSampler();
+
+        while(!audioSampler.lineChosen()) {
+            try {
+                audioSampler.chooseLineLUI(scanner);
+            } catch (LineUnavailableException lue) {
+                lue.printStackTrace();
+            }
+        }
+
+        try {
+            audioSampler.openLine();
+        } catch(LineUnavailableException lue){
+            lue.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void loop() {
+        try {
+            saveSamplesToBuffer(audioSampler.getSamplesDouble(samplesPerUpdate));
+
+            double[] timeSamplesToDraw = new double[samplesToDrawTime];
+            int sps = buffer.length / timeSamplesToDraw.length;
+            for(int i = 0; i < timeSamplesToDraw.length; i++){
+                timeSamplesToDraw[i] = buffer[i * sps];
+            }
+
+            double[] freqSamples = new double[samplesForFft];
+            for(int i = 0; i < samplesForFft; i++){
+                freqSamples[i] = buffer[buffer.length - samplesForFft + i];
+            }
+            freqSamples = FFT.absFft(freqSamples);
+
+
+            //split in half becouse the spectrum is twofold
+            double[] freqSamplesCut = new double[freqSamples.length / 2 - samplesCutAfterFft];
+            for(int i = 0; i < freqSamplesCut.length; i++){
+                freqSamplesCut[i] = freqSamples[i];
+            }
+
+            double[] freqSamplesToDraw = new double[samplesToDrawFft];
+            sps = freqSamplesCut.length / samplesToDrawFft;
+            for(int i = 0; i < samplesToDrawFft; i++){
+                double avg = 0;
+                for(int o = 0; o < sps; o++){
+                    avg += freqSamplesCut[(i*sps)+o];
+                }
+                avg = avg / sps;
+                freqSamplesToDraw[i] = avg;
+            }
+
+            grapher.getTimeGraph().setData(timeSamplesToDraw);
+            grapher.getFreqGraph().setData(freqSamplesToDraw);
+
+        } catch (SamplerException se) {
+            //se.printStackTrace();
+        } catch (LineUnavailableException lue) {
+            lue.printStackTrace();
+        }
     }
 }
