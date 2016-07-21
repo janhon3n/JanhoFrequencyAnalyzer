@@ -69,7 +69,6 @@ public class AudioSampler {
     public float[] getSamplesFloat(int amount) throws SamplerException, LineUnavailableException {
         byte[] data = getSamplesByte(amount);
         float[] floatData = new float[amount];
-        System.out.println();
         switch (audioFormat.getSampleSizeInBits()) {
             case 8:
                 for (int i = 0; i < data.length; i++) {
@@ -87,7 +86,6 @@ public class AudioSampler {
     public double[] getSamplesDouble(int amount)throws SamplerException, LineUnavailableException{
         byte[] data = getSamplesByte(amount);
         double[] doubleData = new double[amount];
-        System.out.println();
         switch (audioFormat.getSampleSizeInBits()) {
             case 8:
                 for (int i = 0; i < data.length; i++) {

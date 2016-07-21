@@ -1,7 +1,4 @@
-import org.sintef.jarduino.DigitalPin;
-import org.sintef.jarduino.DigitalState;
-import org.sintef.jarduino.JArduino;
-import org.sintef.jarduino.PinMode;
+import org.sintef.jarduino.*;
 
 import javax.sound.sampled.LineUnavailableException;
 import java.util.Scanner;
@@ -16,17 +13,18 @@ public class JanhoFrequencyAnalyzer extends JArduino {
     private AudioSampler audioSampler;
     Grapher grapher;
 
-    int samplesPerUpdate = 512;
-    int bufferSize = 16384;
-    int samplesForFft = 4096; //must be 2^n
+    int samplesPerUpdate = 1024;
+    int bufferSize = 8192;
+    int samplesForFft = 2048; //must be 2^n
     int samplesCutAfterFft = 0;
-    int samplesToDrawTime = 2024; //must be bufferSize / n;
+    int samplesToDrawTime = 2048; //must be bufferSize / n;
     int samplesToDrawFft = 256; //must fulfill: samplesToDrawFft * n = samplesForFft / 2, n = {1, 2, 3 ...}
     double[] buffer = new double[bufferSize];
 
-    DigitalPin ledPin = DigitalPin.PIN_5;
-    int ledControlFromWhatFreqsamplesToDrawValue = 3;
-    double ledBaseTreshold = 5000;
+    PWMPin ledPin = PWMPin.PWM_PIN_10;
+    int freqDrawSampleToLed = 0;
+    double ledDownScaler = 50;
+    double ledMaxValue = 255;
 
 
     public JanhoFrequencyAnalyzer(String port) {
@@ -59,7 +57,6 @@ public class JanhoFrequencyAnalyzer extends JArduino {
 
     @Override
     protected void setup() {
-        this.pinMode(ledPin, PinMode.OUTPUT);
         Scanner scanner = new Scanner(System.in);
 
         grapher = new Grapher();
@@ -118,15 +115,16 @@ public class JanhoFrequencyAnalyzer extends JArduino {
                 freqSamplesToDraw[i] = avg;
             }
 
-            System.out.println(freqSamplesToDraw[ledControlFromWhatFreqsamplesToDrawValue]);
-            if (freqSamplesToDraw[ledControlFromWhatFreqsamplesToDrawValue] > ledBaseTreshold){
-                this.digitalWrite(ledPin, DigitalState.HIGH);
-            } else {
-                this.digitalWrite(ledPin, DigitalState.LOW);
-            }
-
             grapher.getTimeGraph().setData(timeSamplesToDraw);
             grapher.getFreqGraph().setData(freqSamplesToDraw);
+
+            double ledLevel = freqSamplesToDraw[freqDrawSampleToLed] / ledDownScaler;
+            if(ledLevel > ledMaxValue)
+                ledLevel = ledMaxValue;
+
+            System.out.println(ledLevel);
+            this.analogWrite(ledPin, (byte)ledLevel);
+
 
         } catch (SamplerException se) {
             //se.printStackTrace();
