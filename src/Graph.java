@@ -95,7 +95,7 @@ public class Graph extends JComponent {
             y2 += shiftY;
             switch(style) {
                 case BAR:
-                    g.fillRect(x1, y1, x2-x1 - 1, this.getHeight() - y1);
+                    g.fillRect(x1, y1, x2-x1, this.getHeight() - y1);
                     break;
                 case LINE:
                 case BARTOP:

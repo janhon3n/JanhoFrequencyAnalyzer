@@ -10,7 +10,7 @@ public class Grapher extends JFrame {
 
     //Edit these values for your data line so that graphs are a good size. (smaller values makes graphs bigger)
     double timeMaxValue = 256;
-    double freqMaxValue = 5;
+    double freqMaxValue = 30;
 
     public Grapher(){
         //set default setting for the JFrame

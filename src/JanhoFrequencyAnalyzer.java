@@ -12,12 +12,12 @@ public class JanhoFrequencyAnalyzer {
 
     int samplesPerUpdate = 512;
     int bufferSize = 16384;
-    int samplesForFft = 8192; //must be 2^n
-    int samplesCutAfterFft = 3072;
+    int samplesForFft = 4096; //must be 2^n
     int samplesToDrawTime = 2024; //must be bufferSize / n;
     int samplesToDrawFft = 256; //must fulfill: samplesToDrawFft * n = samplesForFft / 2, n = {1, 2, 3 ...}
     double[] buffer = new double[bufferSize];
 
+    float lowesFreqToGraph = 200;
 
     public JanhoFrequencyAnalyzer() {
         Scanner scanner = new Scanner(System.in);
@@ -58,23 +58,35 @@ public class JanhoFrequencyAnalyzer {
                     freqSamples[i] = buffer[buffer.length - samplesForFft + i];
                 }
                 freqSamples = FFT.absFft(freqSamples);
-
-
-                //split in half becouse the spectrum is twofold
-                double[] freqSamplesCut = new double[freqSamples.length / 2 - samplesCutAfterFft];
+                //cut the sample size in half becouse the spectrum is 2 sided
+                double[] freqSamplesCut = new double[freqSamples.length / 2];
                 for(int i = 0; i < freqSamplesCut.length; i++){
                     freqSamplesCut[i] = freqSamples[i];
                 }
 
-                double[] freqSamplesToDraw = new double[samplesToDrawFft];
-                sps = freqSamplesCut.length / samplesToDrawFft;
-                for(int i = 0; i < samplesToDrawFft; i++){
-                    double avg = 0;
-                    for(int o = 0; o < sps; o++){
-                        avg += freqSamplesCut[(i*sps)+o];
+                double deltaF = (audioSampler.getSampleRate() / 2) / (freqSamplesCut.length / 2);
+                int samplesCutFromTheLow = (int) (lowesFreqToGraph / deltaF);
+
+                double indexIncreasement = Math.log10(freqSamplesCut.length) / samplesToDrawFft;
+
+                int freqSamplesCutFromTheLow = (int) (Math.log10(samplesCutFromTheLow) / indexIncreasement);
+
+                double[] freqSamplesToDraw = new double[samplesToDrawFft - freqSamplesCutFromTheLow];
+                for(int i = 0; i < samplesToDrawFft - freqSamplesCutFromTheLow; i++) {
+                    int timeSampleIndex = (int) Math.pow(10, indexIncreasement * (i + freqSamplesCutFromTheLow));
+                    //find out how many samples are between the last index and this one and sum them in to the final freq data which is drawn
+                    int sampleCountToSum = (int) (Math.pow(10, indexIncreasement * (i + freqSamplesCutFromTheLow)) - Math.pow(10, indexIncreasement * (i - 1 + freqSamplesCutFromTheLow)));
+
+                    if(sampleCountToSum < 1){
+
+                        sampleCountToSum = 1;
                     }
-                    avg = avg / sps;
-                    freqSamplesToDraw[i] = avg;
+
+                    double sum = 0;
+                    for (int o = 0; o < sampleCountToSum; o++) {
+                        sum += freqSamplesCut[(int) Math.pow(10, indexIncreasement * (i + freqSamplesCutFromTheLow)) - o];
+                    }
+                    freqSamplesToDraw[i] = sum;
                 }
 
                 grapher.getTimeGraph().setData(timeSamplesToDraw);
